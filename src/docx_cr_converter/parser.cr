@@ -2,6 +2,23 @@ module DocxCrConverter
   class Parser
     getter :xml, :docx_path, :errors, :document
 
+    # Path and file format to render
+    #
+    # Public arguments
+    # @docx_path : String         Path to file (relative to main directory i.e → with shard.yml)
+    # @format    : String         Format of output
+    #
+    # Private arguments
+    # @xml       : XML::Node      Parsed XML → extract_files.cr
+    # @changed   : Bool           Return true if word is already formatted
+    # @document  : String         Return formatted document
+    #
+    # Example
+    # ```
+    # docx = DocxCrConverter::Parser.new("./files/document.docx")
+    # docx = DocxCrConverter::Parser.new("./files/document.docx", "other format")
+    # ```
+    #
     def initialize(@docx_path : String, @format = "markdown")
       @xml = DocxCrConverter::ExtractFiles.new(@docx_path)
       @errors = [] of String
@@ -10,10 +27,28 @@ module DocxCrConverter
       @changed = false
     end
 
+    # Return errors if any
+    #
+    # Example
+    # ```
+    # puts docx.errors?
+    # ```
+    #
     def errors?
       @errors.size > 0
     end
 
+    # Convert file to another format
+    #
+    # TODO: Add new formats
+    # NOTE: Read More → macros.cr
+    # 
+    # Example:
+    # ```
+    # puts docx.document
+    # # return formatted document
+    # ```
+    #
     def parse
       return @errors << "Invalid XML::Node parser" unless @xml.xml_document.is_a?(XML::Node)
 
@@ -44,6 +79,7 @@ module DocxCrConverter
               text_style "numPr", "\n\n + #{word} \n\n"
             end
 
+          # If file is not formatted, do not modify it.
             if @changed === false
               word = get_text.as(XML::Node).xpath_nodes("w:r/w:t")
               @document += " #{word} ".sub("<w:t>", "").sub("</w:t>", "")
